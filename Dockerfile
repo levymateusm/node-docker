@@ -1,17 +1,17 @@
 # syntax=docker/dockerfile:1
+FROM node:18-alpine as base
 
-FROM node:18-alpine
+WORKDIR /code
 
-ENV NODE_ENV=production
+COPY package.json package.json
+COPY package-lock.json package-lock.json
 
-WORKDIR /app
-
-COPY ["package.json", "yarn.lock", "./"]
-
-# This works exactly the same as if we were running npm install locally on our machine,
-# but this time these Node modules will be installed into the node_modules directory inside our image.
-RUN yarn install --production
-
+FROM base as test
+RUN npm ci
 COPY . .
+RUN npm run test
 
-CMD ["node", "src/server.js"]
+FROM base as prod
+RUN npm ci --production
+COPY . .
+CMD ["node", "server.js"]
